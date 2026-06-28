@@ -119,6 +119,22 @@ export async function login(email: string, password: string) {
   return result;
 }
 
+export async function googleSignIn(credential: string) {
+  const result = await apiFetch<{ accessToken: string; user: { id: string; email: string; role: string } }>(
+    `${API_BASE}/auth/google`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    },
+  );
+
+  if (result.success && result.data) {
+    setAuth({ accessToken: result.data.accessToken, user: result.data.user });
+  }
+
+  return result;
+}
+
 export async function register(email: string, password: string) {
   const result = await apiFetch<{ accessToken: string; user: { id: string; email: string; role: string } }>(
     `${API_BASE}/auth/register`,

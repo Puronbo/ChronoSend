@@ -15,6 +15,7 @@ import { errorHandler } from './api/middleware/errorHandler';
 import { sanitizeInput } from './api/middleware/sanitize';
 import healthRoutes from './api/routes/health';
 import authRoutes from './api/routes/auth';
+import oauthRoutes from './api/routes/oauth';
 import messagesRoutes from './api/routes/messages';
 import settingsRoutes from './api/routes/settings';
 import adminRoutes from './api/routes/admin';
@@ -70,6 +71,7 @@ async function main(): Promise<void> {
 
   // Auth routes (stricter rate limit)
   app.use(`${API_BASE}/auth`, authLimiter, authRoutes);
+  app.use(`${API_BASE}/auth`, authLimiter, oauthRoutes);
 
   // Protected routes
   app.use(`${API_BASE}/messages`, defaultLimiter, messagesRoutes);

@@ -15,7 +15,7 @@ datasource db {
 model User {
   id            String   @id @default(uuid()) @db.Uuid
   email         String   @unique
-  password_hash String
+  password_hash String?  // Nullable for OAuth-only accounts
   role          String   @default("user") // "user" | "admin"
   created_at    DateTime @default(now()) @db.Timestamptz
   updated_at    DateTime @updatedAt @db.Timestamptz
@@ -24,8 +24,27 @@ model User {
   user_credentials   UserCredentials?
   scheduled_messages ScheduledMessage[]
   delivery_logs      DeliveryLog[]
+  oauth_accounts     OAuthAccount[]
 
   @@map("users")
+}
+
+// ─── OAuth Accounts ──────────────────────────────────────────────────────────
+model OAuthAccount {
+  id                  String   @id @default(uuid()) @db.Uuid
+  user_id             String   @db.Uuid
+  provider            String   // "google"
+  provider_account_id String
+  access_token_enc    String?  // AES-256-GCM encrypted
+  refresh_token_enc   String?  // AES-256-GCM encrypted
+  expires_at          DateTime? @db.Timestamptz
+  created_at          DateTime @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_account_id])
+  @@index([user_id])
+  @@map("oauth_accounts")
 }
 
 // ─── Refresh Tokens ─────────────────────────────────────────────────────────

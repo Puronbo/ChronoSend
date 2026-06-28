@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/auth-context';
 import { Button } from '../components/ui/button';
@@ -6,14 +6,46 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Clock } from 'lucide-react';
 
+const GOOGLE_CLIENT_ID = '1052008581434-qh8uodifebf3okhl6hr7ll421r9nr77a.apps.googleusercontent.com';
+
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, googleSignIn } = useAuth();
   const navigate = useNavigate();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response: { credential: string }) => {
+            const result = await googleSignIn(response.credential);
+            if (result.success) {
+              navigate('/dashboard');
+            } else {
+              setError(result.error || 'Google sign-in failed');
+            }
+          },
+        });
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: 300,
+        });
+      }
+    };
+    document.head.appendChild(script);
+    return () => { const s = document.querySelector('script[src="https://accounts.google.com/gsi/client"]'); if (s) s.remove(); };
+  }, [googleSignIn, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +127,17 @@ export function LoginPage() {
             </Button>
           </form>
 
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div ref={googleBtnRef} className="flex justify-center" />
+
           <p className="mt-4 text-center text-xs text-muted-foreground">
             {isLogin ? (
               <>
@@ -116,4 +159,17 @@ export function LoginPage() {
       </Card>
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
+          renderButton: (element: HTMLElement, options: { theme?: string; size?: string; width?: number }) => void;
+        };
+      };
+    };
+  }
 }

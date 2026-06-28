@@ -3,6 +3,7 @@ import {
   login as apiLogin,
   register as apiRegister,
   logout as apiLogout,
+  googleSignIn as apiGoogleSignIn,
   getStoredUser,
   clearAuth,
   setAuth,
@@ -25,6 +26,7 @@ interface AuthContextType {
   checkCredentials: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  googleSignIn: (credential: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -98,6 +100,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const googleSignIn = useCallback(async (credential: string) => {
+    setLoading(true);
+    try {
+      const result = await apiGoogleSignIn(credential);
+      if (result.success && result.data) {
+        const u = result.data.user;
+        setUser(u);
+        return { success: true };
+      }
+      return { success: false, error: result.error || 'Google sign-in failed' };
+    } catch {
+      return { success: false, error: 'Network error' };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     await apiLogout();
     setUser(null);
@@ -126,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkCredentials,
         login,
         register,
+        googleSignIn,
         logout,
       }}
     >

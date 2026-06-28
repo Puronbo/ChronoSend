@@ -78,6 +78,11 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
       return;
     }
 
+    if (!user.password_hash) {
+      res.status(401).json({ success: false, error: 'This account uses Google sign-in. Please sign in with Google.' });
+      return;
+    }
+
     const valid = await comparePassword(password, user.password_hash);
     if (!valid) {
       res.status(401).json({ success: false, error: 'Invalid email or password' });
