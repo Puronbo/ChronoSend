@@ -7,13 +7,14 @@ import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from '../hooks/use-toast';
-import { Send, Mail, MessageSquare, Phone, Plane, Settings as SettingsIcon } from 'lucide-react';
+import { Send, Mail, MessageSquare, Phone, Plane, Settings as SettingsIcon, Headphones } from 'lucide-react';
 
 const platforms = [
   { value: 'telegram', label: 'Telegram', icon: Plane },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'sms', label: 'SMS', icon: Phone },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
+  { value: 'discord', label: 'Discord', icon: Headphones },
 ];
 
 const repeatOptions = [
@@ -137,6 +138,8 @@ export function ComposePage() {
                   ? 'recipient@example.com'
                   : platform === 'sms'
                   ? '+1234567890 (E.164 format)'
+                  : platform === 'discord'
+                  ? 'channel ID or webhook URL'
                   : '+1234567890'
               }
               value={recipient}

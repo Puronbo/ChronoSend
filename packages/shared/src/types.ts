@@ -41,6 +41,7 @@ export interface UserCredentials {
   twilio_phone_number: string | null;
   twilio_whatsapp_number: string | null;
   whatsapp_method: WhatsAppMethod;
+  discord_bot_token_enc: string | null;
   timezone: string;
   updated_at: string;
 }
@@ -55,6 +56,7 @@ export interface CredentialsInput {
   twilio_phone_number?: string;
   twilio_whatsapp_number?: string;
   whatsapp_method?: WhatsAppMethod;
+  discord_bot_token?: string;
   timezone?: string;
 }
 
@@ -71,6 +73,7 @@ export interface CredentialsResponse {
   email_app_password_preview: string | null;
   twilio_account_sid_preview: string | null;
   twilio_auth_token_preview: string | null;
+  discord_bot_token_preview: string | null;
 }
 
 // ─── Scheduled Message ───────────────────────────────────────────────────────

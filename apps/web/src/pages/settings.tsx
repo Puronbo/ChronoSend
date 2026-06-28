@@ -6,7 +6,7 @@ import { Select } from '../components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../hooks/use-toast';
-import { Send, Mail, MessageSquare, Phone, Shield, Save } from 'lucide-react';
+import { Send, Mail, MessageSquare, Phone, Shield, Save, Headphones } from 'lucide-react';
 
 interface Credentials {
   email_address: string | null;
@@ -18,6 +18,7 @@ interface Credentials {
   email_app_password_preview: string | null;
   twilio_account_sid_preview: string | null;
   twilio_auth_token_preview: string | null;
+  discord_bot_token_preview: string | null;
 }
 
 const timezones = Intl.supportedValuesOf?.('timeZone') || [
@@ -41,6 +42,8 @@ export function SettingsPage() {
   const [twilioPhone, setTwilioPhone] = useState('');
   const [twilioWhatsapp, setTwilioWhatsapp] = useState('');
   const [whatsappMethod, setWhatsappMethod] = useState('twilio');
+  // Discord
+  const [discordToken, setDiscordToken] = useState('');
   // Timezone
   const [timezone, setTimezone] = useState('UTC');
 
@@ -114,6 +117,9 @@ export function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="whatsapp" className="gap-2">
             <MessageSquare className="h-4 w-4" /> WhatsApp
+          </TabsTrigger>
+          <TabsTrigger value="discord" className="gap-2">
+            <Headphones className="h-4 w-4" /> Discord
           </TabsTrigger>
           <TabsTrigger value="general" className="gap-2">
             <Shield className="h-4 w-4" /> General
@@ -244,6 +250,42 @@ export function SettingsPage() {
                 </Button>
                 <Button variant="outline" onClick={() => testPlatform('whatsapp')}>
                   Test WhatsApp
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Discord */}
+        <TabsContent value="discord">
+          <Card>
+            <CardHeader>
+              <CardTitle>Discord Configuration</CardTitle>
+              <CardDescription>
+                Create a bot at the{' '}
+                <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Discord Developer Portal
+                </a>
+                , enable the Message Content intent, and paste the bot token below. Invite the bot to your server with `Send Messages` permission.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Current: {previewValue(creds?.discord_bot_token_preview)}
+              </p>
+              <Input
+                label="Bot Token"
+                type="password"
+                placeholder="your_discord_bot_token"
+                value={discordToken}
+                onChange={(e) => setDiscordToken(e.target.value)}
+              />
+              <div className="flex gap-3">
+                <Button onClick={() => saveSection('Discord', { discord_bot_token: discordToken })} disabled={!discordToken}>
+                  <Save className="mr-2 h-4 w-4" /> Save
+                </Button>
+                <Button variant="outline" onClick={() => testPlatform('discord')}>
+                  Test Connection
                 </Button>
               </div>
             </CardContent>

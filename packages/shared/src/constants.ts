@@ -1,5 +1,5 @@
 // Platform identifiers
-export const PLATFORMS = ['telegram', 'email', 'sms', 'whatsapp'] as const;
+export const PLATFORMS = ['telegram', 'email', 'sms', 'whatsapp', 'discord'] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 // Repeat rules

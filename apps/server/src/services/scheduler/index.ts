@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import prisma from '../../db/client';
 import { getWsManager } from '../websocket';
-import { sendTelegram, sendEmail, sendSms, sendWhatsApp } from '../senders';
+import { sendTelegram, sendEmail, sendSms, sendWhatsApp, sendDiscord } from '../senders';
 import { getCredentials } from './credentials';
 import { jobQueue } from './queue';
 import { SCHEDULER_CRON_INTERVAL, REPEAT_RULES } from '@chronosend/shared';
@@ -67,6 +67,15 @@ async function dispatch(
           twilio_whatsapp_number: credentials.twilio_whatsapp_number,
           twilio_phone_number: credentials.twilio_phone_number,
           whatsapp_method: credentials.whatsapp_method || 'twilio',
+        },
+      });
+
+    case 'discord':
+      return sendDiscord({
+        recipient: message.recipient,
+        body: message.body,
+        credentials: {
+          discord_bot_token_enc: credentials.discord_bot_token_enc,
         },
       });
 

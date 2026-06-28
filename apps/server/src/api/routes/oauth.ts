@@ -148,9 +148,9 @@ router.post('/google', async (req, res) => {
         },
       },
     });
-  } catch (err) {
-    console.error('[oauth] Google sign-in error:', err);
-    res.status(500).json({ success: false, error: 'Google sign-in failed' });
+  } catch (err: any) {
+    console.error('[oauth] Google sign-in error:', err?.message || err);
+    res.status(401).json({ success: false, error: 'Invalid Google token' });
   }
 });
 

@@ -93,6 +93,7 @@ export const credentialsSchema = z.object({
   twilio_phone_number: z.string().min(1, 'Phone number required').optional(),
   twilio_whatsapp_number: z.string().min(1, 'WhatsApp number required').optional(),
   whatsapp_method: z.enum(WHATSAPP_METHODS).optional(),
+  discord_bot_token: z.string().min(1, 'Bot token required').optional(),
 });
 
 export const timezoneSchema = z.object({

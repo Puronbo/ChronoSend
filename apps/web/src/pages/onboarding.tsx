@@ -6,13 +6,14 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from '../hooks/use-toast';
-import { Mail, Send, Phone, MessageSquare, Check, ArrowRight, Clock } from 'lucide-react';
+import { Mail, Send, Phone, MessageSquare, Check, ArrowRight, Clock, Headphones } from 'lucide-react';
 
 const platforms = [
   { value: 'email', label: 'Email', icon: Mail, desc: 'Send via SMTP (Gmail, Outlook, etc.)' },
   { value: 'telegram', label: 'Telegram', icon: Send, desc: 'Send via Telegram Bot' },
   { value: 'sms', label: 'SMS', icon: Phone, desc: 'Send via Twilio SMS' },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, desc: 'Send via Twilio WhatsApp' },
+  { value: 'discord', label: 'Discord', icon: Headphones, desc: 'Send via Discord Bot' },
 ];
 
 export function OnboardingPage() {
@@ -24,6 +25,7 @@ export function OnboardingPage() {
   const [twilioSid, setTwilioSid] = useState('');
   const [twilioToken, setTwilioToken] = useState('');
   const [twilioPhone, setTwilioPhone] = useState('');
+  const [discordToken, setDiscordToken] = useState('');
   const [saving, setSaving] = useState(false);
   const { checkCredentials } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +67,13 @@ export function OnboardingPage() {
       payload.twilio_auth_token = twilioToken;
       payload.twilio_whatsapp_number = twilioPhone;
       payload.whatsapp_method = 'twilio';
+    } else if (platform === 'discord') {
+      if (!discordToken) {
+        toast('Please enter your Discord bot token', { variant: 'error' });
+        setSaving(false);
+        return;
+      }
+      payload.discord_bot_token = discordToken;
     }
 
     const result = await apiFetch('/api/v1/settings', {
@@ -167,6 +176,7 @@ export function OnboardingPage() {
             {platform === 'telegram' && <Send className="h-5 w-5 text-primary" />}
             {platform === 'sms' && <Phone className="h-5 w-5 text-primary" />}
             {platform === 'whatsapp' && <MessageSquare className="h-5 w-5 text-primary" />}
+            {platform === 'discord' && <Headphones className="h-5 w-5 text-primary" />}
             Configure {platform.charAt(0).toUpperCase() + platform.slice(1)}
           </CardTitle>
           <CardDescription>
@@ -178,6 +188,9 @@ export function OnboardingPage() {
             )}
             {platform === 'sms' && <>Enter your Twilio credentials for sending SMS messages.</>}
             {platform === 'whatsapp' && <>Enter your Twilio WhatsApp Sandbox credentials.</>}
+            {platform === 'discord' && (
+              <>Create a bot at the <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Discord Developer Portal</a>, enable Message Content intent, and paste the bot token below.</>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -189,6 +202,9 @@ export function OnboardingPage() {
           )}
           {platform === 'telegram' && (
             <Input label="Bot Token" type="password" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" value={telegramToken} onChange={(e) => setTelegramToken(e.target.value)} />
+          )}
+          {platform === 'discord' && (
+            <Input label="Bot Token" type="password" placeholder="your_discord_bot_token" value={discordToken} onChange={(e) => setDiscordToken(e.target.value)} />
           )}
           {(platform === 'sms' || platform === 'whatsapp') && (
             <>

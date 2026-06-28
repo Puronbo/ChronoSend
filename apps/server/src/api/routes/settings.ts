@@ -4,7 +4,7 @@ import { authGuard } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { credentialsSchema, timezoneSchema, testPlatformSchema } from '@chronosend/shared';
 import { encrypt } from '../../services/crypto';
-import { sendTelegram, sendEmail, sendSms, sendWhatsApp } from '../../services/senders';
+import { sendTelegram, sendEmail, sendSms, sendWhatsApp, sendDiscord } from '../../services/senders';
 
 const router = Router();
 
@@ -38,6 +38,7 @@ router.get('/', async (req: Request, res: Response) => {
           email_app_password_preview: null,
           twilio_account_sid_preview: null,
           twilio_auth_token_preview: null,
+          discord_bot_token_preview: null,
         },
       });
       return;
@@ -57,6 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
         email_app_password_preview: preview(creds.email_app_password_enc),
         twilio_account_sid_preview: preview(creds.twilio_account_sid_enc),
         twilio_auth_token_preview: preview(creds.twilio_auth_token_enc),
+        discord_bot_token_preview: preview(creds.discord_bot_token_enc),
       },
     });
   } catch (err) {
@@ -93,6 +95,9 @@ router.put('/', validate(credentialsSchema), async (req: Request, res: Response)
     }
     if (req.body.whatsapp_method) {
       data.whatsapp_method = req.body.whatsapp_method;
+    }
+    if (req.body.discord_bot_token) {
+      data.discord_bot_token_enc = JSON.stringify(encrypt(req.body.discord_bot_token));
     }
 
     const creds = await (prisma.userCredentials.upsert as any)({
@@ -213,6 +218,14 @@ router.post('/test/:platform', validate(testPlatformSchema, 'params'), async (re
             twilio_phone_number: creds.twilio_phone_number,
             whatsapp_method: creds.whatsapp_method || 'twilio',
           },
+        });
+        break;
+      }
+      case 'discord': {
+        result = await sendDiscord({
+          recipient: req.user!.userId,
+          body: testBody,
+          credentials: { discord_bot_token_enc: creds.discord_bot_token_enc },
         });
         break;
       }

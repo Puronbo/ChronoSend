@@ -134,7 +134,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     ]);
 
     // By-platform breakdown
-    const platforms = ['telegram', 'email', 'sms', 'whatsapp'] as const;
+    const platforms = ['telegram', 'email', 'sms', 'whatsapp', 'discord'] as const;
     const byPlatform: Record<string, number> = {};
     for (const p of platforms) {
       byPlatform[p] = await prisma.scheduledMessage.count({

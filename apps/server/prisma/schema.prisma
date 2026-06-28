@@ -73,6 +73,7 @@ model UserCredentials {
   twilio_phone_number    String?
   twilio_whatsapp_number String?
   whatsapp_method        String   @default("twilio") // "twilio" | "baileys"
+  discord_bot_token_enc  String?  // AES-256-GCM encrypted
   timezone               String   @default("UTC")
   updated_at             DateTime @updatedAt @db.Timestamptz
 
