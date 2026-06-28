@@ -1,0 +1,99 @@
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  login as apiLogin,
+  register as apiRegister,
+  logout as apiLogout,
+  getStoredUser,
+  clearAuth,
+  setAuth,
+} from '../lib/auth';
+
+interface User {
+  id: string;
+  email: string;
+  role: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(getStoredUser());
+  const [loading, setLoading] = useState(false);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const result = await apiLogin(email, password);
+      if (result.success && result.data) {
+        const u = result.data.user;
+        setUser(u);
+        return { success: true };
+      }
+      return { success: false, error: result.error || 'Login failed' };
+    } catch {
+      return { success: false, error: 'Network error' };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const register = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const result = await apiRegister(email, password);
+      if (result.success && result.data) {
+        const u = result.data.user;
+        setUser(u);
+        return { success: true };
+      }
+      return { success: false, error: result.error || 'Registration failed' };
+    } catch {
+      return { success: false, error: 'Network error' };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await apiLogout();
+    setUser(null);
+    clearAuth();
+  }, []);
+
+  useEffect(() => {
+    const u = getStoredUser();
+    if (u) setUser(u);
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isAdmin: user?.role === 'admin',
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}
