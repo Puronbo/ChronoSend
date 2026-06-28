@@ -6,6 +6,7 @@ import {
   getStoredUser,
   clearAuth,
   setAuth,
+  apiFetch,
 } from '../lib/auth';
 
 interface User {
@@ -19,6 +20,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
+  hasCredentials: boolean | null;
+  credentialsLoading: boolean;
+  checkCredentials: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -29,6 +33,36 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getStoredUser());
   const [loading, setLoading] = useState(false);
+  const [hasCredentials, setHasCredentials] = useState<boolean | null>(null);
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
+
+  const checkCredentials = useCallback(async () => {
+    if (!user) return;
+    setCredentialsLoading(true);
+    try {
+      const result = await apiFetch<{
+        email_address: string | null;
+        telegram_bot_token_preview: string | null;
+        email_app_password_preview: string | null;
+        twilio_account_sid_preview: string | null;
+        twilio_auth_token_preview: string | null;
+      }>('/api/v1/settings');
+      if (result.success && result.data) {
+        const d = result.data;
+        const configured =
+          !!d.email_address ||
+          !!d.telegram_bot_token_preview ||
+          !!d.email_app_password_preview ||
+          !!d.twilio_account_sid_preview ||
+          !!d.twilio_auth_token_preview;
+        setHasCredentials(configured);
+      }
+    } catch {
+      // Silently fail — credentials check is non-critical
+    } finally {
+      setCredentialsLoading(false);
+    }
+  }, [user]);
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
@@ -68,12 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiLogout();
     setUser(null);
     clearAuth();
+    setHasCredentials(null);
   }, []);
 
   useEffect(() => {
     const u = getStoredUser();
     if (u) setUser(u);
   }, []);
+
+  useEffect(() => {
+    if (user) checkCredentials();
+  }, [user, checkCredentials]);
 
   return (
     <AuthContext.Provider
@@ -82,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
         loading,
+        hasCredentials,
+        credentialsLoading,
+        checkCredentials,
         login,
         register,
         logout,

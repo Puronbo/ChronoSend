@@ -26,7 +26,7 @@ const navItems = [
 ];
 
 export function Sidebar({ open, onClose }: SidebarProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasCredentials } = useAuth();
 
   return (
     <>
@@ -66,6 +66,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             >
               <item.icon className="h-5 w-5" />
               {item.label}
+              {item.to === '/settings' && hasCredentials === false && (
+                <span className="ml-auto flex h-2 w-2 rounded-full bg-amber-500" title="Configure delivery methods" />
+              )}
             </NavLink>
           ))}
 

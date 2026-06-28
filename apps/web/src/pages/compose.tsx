@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/auth-context';
 import { apiFetch } from '../lib/auth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from '../hooks/use-toast';
-import { Send, Mail, MessageSquare, Phone, Plane } from 'lucide-react';
+import { Send, Mail, MessageSquare, Phone, Plane, Settings as SettingsIcon } from 'lucide-react';
 
 const platforms = [
   { value: 'telegram', label: 'Telegram', icon: Plane },
@@ -69,6 +70,8 @@ export function ComposePage() {
     setSending(false);
   };
 
+  const { hasCredentials } = useAuth();
+
   const PlatformIcon = platforms.find((p) => p.value === platform)?.icon || Send;
 
   return (
@@ -76,6 +79,19 @@ export function ComposePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Compose Message</h1>
       </div>
+
+      {hasCredentials === false && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 flex items-start gap-3">
+          <SettingsIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-amber-800 dark:text-amber-200">
+            <p className="font-medium">No delivery methods configured</p>
+            <p className="mt-1">Set up at least one delivery method (Email, Telegram, etc.) before sending messages.</p>
+            <Link to="/settings" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              <SettingsIcon className="h-4 w-4" /> Go to Settings
+            </Link>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Platform picker */}
