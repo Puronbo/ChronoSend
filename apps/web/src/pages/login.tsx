@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/auth-context';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { AlertCircle } from 'lucide-react';
 import { Clock } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = '1052008581434-qh8uodifebf3okhl6hr7ll421r9nr77a.apps.googleusercontent.com';
@@ -13,38 +14,61 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [gsiLoaded, setGsiLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, register, googleSignIn } = useAuth();
   const navigate = useNavigate();
   const googleBtnRef = useRef<HTMLDivElement>(null);
+  const gsiInited = useRef(false);
 
   useEffect(() => {
+    if (gsiInited.current) return;
+    gsiInited.current = true;
+
+    if (window.google) {
+      setGsiLoaded(true);
+      initGsi();
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    script.onload = () => {
-      if (window.google && googleBtnRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: async (response: { credential: string }) => {
-            const result = await googleSignIn(response.credential);
+    script.onload = () => { setGsiLoaded(true); initGsi(); };
+    script.onerror = () => setError('Failed to load Google Sign-In. Check your ad blocker or network.');
+    document.head.appendChild(script);
+
+    function initGsi() {
+      if (!window.google || !googleBtnRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          if (!response.credential) {
+            setError('Google Sign-In returned no credential. Make sure the current domain is listed as an Authorized JavaScript origin in Google Cloud Console.');
+            return;
+          }
+          setError('');
+          googleSignIn(response.credential).then((result) => {
             if (result.success) {
               navigate('/dashboard');
             } else {
               setError(result.error || 'Google sign-in failed');
             }
-          },
-        });
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: 300,
-        });
-      }
+          });
+        },
+      });
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 300,
+      });
+    }
+
+    return () => {
+      const s = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (s) document.head.removeChild(s);
     };
-    document.head.appendChild(script);
-    return () => { const s = document.querySelector('script[src="https://accounts.google.com/gsi/client"]'); if (s) s.remove(); };
   }, [googleSignIn, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +144,10 @@ export function LoginPage() {
               error={error && !password ? '' : undefined}
             />
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
             )}
             <Button type="submit" className="w-full" loading={loading}>
               {isLogin ? 'Sign In' : 'Create Account'}
@@ -166,7 +193,7 @@ declare global {
     google?: {
       accounts: {
         id: {
-          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
+          initialize: (config: { client_id: string; callback: (response: { credential?: string }) => void }) => void;
           renderButton: (element: HTMLElement, options: { theme?: string; size?: string; width?: number }) => void;
         };
       };

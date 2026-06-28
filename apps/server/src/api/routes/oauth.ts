@@ -22,15 +22,31 @@ router.post('/google', async (req, res) => {
       return;
     }
 
+    if (!config.googleClientId) {
+      console.error('[oauth] GOOGLE_CLIENT_ID is not set on the server');
+      res.status(500).json({ success: false, error: 'Google Sign-In is not configured on the server (GOOGLE_CLIENT_ID missing)' });
+      return;
+    }
+
     const client = new OAuth2Client(config.googleClientId);
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: config.googleClientId,
-    });
+    let ticket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: config.googleClientId,
+      });
+    } catch (verifyErr: any) {
+      console.error('[oauth] Token verification failed:', verifyErr?.message);
+      res.status(401).json({
+        success: false,
+        error: `Google token verification failed: ${verifyErr?.message || 'Unknown error'}. Make sure the Authorized JavaScript origins in Google Cloud Console include your current domain.`,
+      });
+      return;
+    }
 
     const payload = ticket.getPayload() as GoogleTokenPayload | undefined;
     if (!payload || !payload.email) {
-      res.status(401).json({ success: false, error: 'Invalid Google token' });
+      res.status(401).json({ success: false, error: 'Google token payload missing email' });
       return;
     }
 
